@@ -9,6 +9,7 @@ These are then connected to the node number located at (i,j,k) constructing a gr
 allows for forward movement within the local clusters. The graph is represented by a sparse
 matrix as described in scipy.sparse.csgraph. The 2D analogy of the graph construction is illustrated below:
 
+![example](https://github.com/AxelHenningsson/sparselabel/assets/31615210/2703bcbb-de07-4bd0-a529-c76bbf5ea42c)
 
 # Example
 Imagine the that we want to segment the binary dense array
@@ -40,3 +41,16 @@ This means that `array3d[row, col, frame]!=0`. We can now label the sparse array
 ```
 
 The `labels` array specifies the voxel cluster index that each nonzero voxel in `array3d` belongs to. I.e `array3d[row[labels==k], col[labels==k], frame[labels==k]]` are all of the voxels that belong to cluster with index `k`. Cluster belonging is here defined from a 6-neighbourhood, i.e voxels sharing a common face will belong to the same cluster.
+
+# Installation
+----------
+Clone the repo and go to the root
+
+    git clone https://github.com/AxelHenningsson/sparselabel.git
+    cd lauesim
+
+Create a new pip environment and install
+
+    python3 -m venv env
+    pip install -e .
+
