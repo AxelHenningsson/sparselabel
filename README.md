@@ -9,7 +9,8 @@ These are then connected to the node number located at (i,j,k) constructing a gr
 allows for forward movement within the local clusters. The graph is represented by a sparse
 matrix as described in scipy.sparse.csgraph. The 2D analogy of the graph construction is illustrated below:
 
-![example](https://github.com/AxelHenningsson/sparselabel/assets/31615210/2703bcbb-de07-4bd0-a529-c76bbf5ea42c)
+![example](https://github.com/AxelHenningsson/sparselabel/assets/31615210/b9ca9116-7c0b-404e-acd4-6fc9c6954074)
+
 
 # Example
 Imagine the that we want to segment the binary dense array
