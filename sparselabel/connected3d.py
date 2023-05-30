@@ -13,11 +13,32 @@ def moments(row, col, frame, labels, weights):
         weights (`array like`): weights to take into account for CoG computation.
 
     Returns:
-        `tuple`: The row, col and frame center of gravity of the voxel clusters.
+        `tuple`: The row, col and frame center of gravity of the voxel clusters as well
+            as the sum of the weights of the clusters (rc,cc,fc,W).
     """
     index = np.argsort(labels)
-    srow, scol, sframe = row[index], col[index], frame[index]
-    pass
+    srow, scol, sframe, sweights = row[index], col[index], frame[index], weights[index]
+    slabels = labels[index]
+    breakpoints = np.insert(np.where(slabels[:-1] != slabels[1:])[0]+1, 0, 0, axis=0)
+    W,cc,rc,fc = [],[],[],[]
+    for b1,b2 in zip(breakpoints[0:],breakpoints[1:]):
+        r = scol[b1:b2]
+        c = srow[b1:b2]
+        f = sframe[b1:b2]
+        w = sweights[b1:b2]
+        W.append( np.sum(w) )
+        rc.append( r.dot(w) / W[-1] )
+        cc.append( c.dot(w) / W[-1] )
+        fc.append( f.dot(w) / W[-1] )
+    r = scol[breakpoints[-1]:]
+    c = srow[breakpoints[-1]:]
+    f = sframe[breakpoints[-1]:]
+    w = sweights[breakpoints[-1]:]
+    W.append( np.sum(w) )
+    rc.append( r.dot(w) / W[-1] )
+    cc.append( c.dot(w) / W[-1] )
+    fc.append( f.dot(w) / W[-1] )
+    return np.array(rc), np.array(cc), np.array(fc), np.array(W)
 
 def label(row, col, frame):
     """Label a 3D sparse array given the indices of the nonzero components.
