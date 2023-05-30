@@ -47,7 +47,14 @@ def label(row, col, frame):
     num_features, labels = cc(csgraph=graph)
     return np.array( labels[graph_node_labels] ), num_features-1
 
-def _get_graph(graph_node_labels, frc_rows, frc_cols, frc_frames):
+def _get_graph(graph_node_labels, rows, cols, frames):
+
+    frc_index    = np.lexsort( (cols, rows, frames) )
+    frc_cols     = cols[frc_index]
+    frc_rows     = rows[frc_index]
+    frc_frames   = frames[frc_index]
+    frc_data     = graph_node_labels[frc_index]
+
     fcr_index    = np.lexsort( (frc_rows, frc_cols, frc_frames) )
     fcr_cols     = frc_cols[fcr_index]
     fcr_rows     = frc_rows[fcr_index]
