@@ -43,6 +43,16 @@ This means that `array3d[row, col, frame]!=0`. We can now label the sparse array
 
 The `labels` array specifies the voxel cluster index that each nonzero voxel in `array3d` belongs to. I.e `array3d[row[labels==k], col[labels==k], frame[labels==k]]` are all of the voxels that belong to cluster with index `k`. Cluster belonging is here defined from a 6-neighbourhood, i.e voxels sharing a common face will belong to the same cluster.
 
+# Benchmarks
+----------
+Benchmarks using test arrays of shape=(2048 x 2048 x N) with Gaussian 3D voxel clusters with approximate diameter 15 voxels. The number of nonzero components was increased by copying and restacking the sparse frames to increase N.
+
+![image](https://github.com/AxelHenningsson/sparselabel/assets/31615210/c33071f6-cfc7-4dd6-8249-7d328e92a952)
+
+A sample 2048 x 2048 sparse frame from the benchmark dataset can be viewed below:
+![image](https://github.com/AxelHenningsson/sparselabel/assets/31615210/cf047e68-3c62-4721-88ac-b530675d1953)
+
+
 # Installation
 ----------
 Clone the repo and go to the root
