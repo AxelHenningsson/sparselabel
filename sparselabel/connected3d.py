@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import connected_components as cc
+from numba import jit
 
 def moments(row, col, frame, labels, weights):
     """Compute center of gravity of the voxel clusters described by labels.
@@ -68,8 +69,39 @@ def label(row, col, frame):
     num_features, labels = cc(csgraph=graph)
     return np.array( labels[graph_node_labels] ), num_features-1
 
-def _get_graph(graph_node_labels, rows, cols, frames):
 
+@jit(nopython=True)
+def _gritty_loop(frc_rows, 
+                 frc_cols, 
+                 frc_frames, 
+                 frc_data,
+                 fcr_cols, 
+                 fcr_rows,
+                 fcr_frames,
+                 fcr_data,
+                 rcf_cols,  
+                 rcf_rows,  
+                 rcf_frames,
+                 rcf_data ):
+    row, col = [], []
+    for c in range(len(frc_rows)-1):
+
+            if frc_rows[c]==frc_rows[c+1] and frc_frames[c]==frc_frames[c+1] and frc_cols[c]==frc_cols[c+1]-1:
+                row.append(frc_data[c])
+                col.append(frc_data[c+1])
+
+            if fcr_cols[c]==fcr_cols[c+1] and fcr_frames[c]==fcr_frames[c+1] and fcr_rows[c]==fcr_rows[c+1]-1:
+                row.append(fcr_data[c])
+                col.append(fcr_data[c+1])
+
+            if rcf_cols[c]==rcf_cols[c+1] and rcf_rows[c]==rcf_rows[c+1] and rcf_frames[c]==rcf_frames[c+1]-1 :
+                row.append(rcf_data[c])
+                col.append(rcf_data[c+1])
+
+    return row, col
+
+def _get_graph(graph_node_labels, rows, cols, frames):
+    
     frc_index    = np.lexsort( (cols, rows, frames) )
     frc_cols     = cols[frc_index]
     frc_rows     = rows[frc_index]
@@ -88,20 +120,18 @@ def _get_graph(graph_node_labels, rows, cols, frames):
     rcf_frames   = frc_frames[rcf_index]
     rcf_data     = graph_node_labels[rcf_index]
 
-    row, col = [], []
-    for c in range(len(graph_node_labels)-1):
-
-            if frc_rows[c]==frc_rows[c+1] and frc_frames[c]==frc_frames[c+1] and frc_cols[c]==frc_cols[c+1]-1:
-                row.append(graph_node_labels[c])
-                col.append(graph_node_labels[c+1])
-
-            if fcr_cols[c]==fcr_cols[c+1] and fcr_frames[c]==fcr_frames[c+1] and fcr_rows[c]==fcr_rows[c+1]-1:
-                row.append(fcr_data[c])
-                col.append(fcr_data[c+1])
-
-            if rcf_cols[c]==rcf_cols[c+1] and rcf_rows[c]==rcf_rows[c+1] and rcf_frames[c]==rcf_frames[c+1]-1 :
-                row.append(rcf_data[c])
-                col.append(rcf_data[c+1])
+    row,col = _gritty_loop( frc_rows, 
+                            frc_cols, 
+                            frc_frames, 
+                            frc_data,
+                            fcr_cols, 
+                            fcr_rows,
+                            fcr_frames,
+                            fcr_data,
+                            rcf_cols,  
+                            rcf_rows,  
+                            rcf_frames,
+                            rcf_data )
 
     nid = np.max(graph_node_labels)
     return csr_matrix(([1]*len(row), (row, col)), shape=(nid+1, nid+1), dtype=np.int8)
