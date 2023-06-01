@@ -1,7 +1,9 @@
 import numpy as np
-from scipy.sparse import csr_matrix
-from scipy.sparse.csgraph import connected_components as cc
+from scipy.sparse import csr_matrix, coo_matrix
+from scipy.sparse.csgraph import connected_components
 from numba import jit
+from ImageD11.sparseframe import SparseScan
+from ImageD11.sinograms.properties import pairrow
 
 def moments(row, col, frame, labels, weights):
     """Compute center of gravity of the voxel clusters described by labels.
@@ -41,6 +43,45 @@ def moments(row, col, frame, labels, weights):
     fc.append( f.dot(w) / W[-1] )
     return np.array(rc), np.array(cc), np.array(fc), np.array(W)
 
+def ImageD11_cp( spname, scan ):
+    """
+    comparable code = determine only the labels and use the connected pixels labels
+    this does 9-connected labels within the frame and direct overlaps through the stack
+    # ... perhaps a refactoring is needed as this was not intended to be used like this
+    """
+    row = 0
+    sps = SparseScan( spname, scan )
+    # this does connected pixels
+    sps.cplabel( countall = False ) # adds sps.labels for each frame
+    # do sps.lmlabel to get the local max labelling
+    pairs = pairrow( sps, row )
+    # For the 3D merging 
+    n1 = sum( pairs[k][0] for k in pairs ) # how many overlaps were found:
+    npk = np.array(  [ (sps.total_labels, n1, 0), ] )
+    # fill in the overlaps sparse array
+    r =  np.zeros( ( n1,), dtype=int )
+    c =  np.zeros( ( n1,), dtype=int )
+    s = 0
+    pkid = np.concatenate(([0,], np.cumsum(sps.nlabels)))
+    for (row1, frame1, row2, frame2), (npairs, ijn) in pairs.items():
+        # add entries into a sparse matrix
+        # key:   (500, 2, 501, 2893)
+        # value: (41, array([[  1,   1,   5],
+        #                    [  1,   2,   2], ...
+        if npairs == 0:
+            continue
+        e = s + npairs
+        r[ s : e ] = pkid[frame1] + ijn[:,0] - 1       # col
+        c[ s : e ] = pkid[frame2] + ijn[:,1] - 1       # row
+        s = e
+    coo = coo_matrix( (np.ones(n1), (r, c)), shape=( sps.total_labels, sps.total_labels ) )
+    cc = connected_components( coo, directed=False, return_labels=True )
+    # now you want to get these labels onto the original pixels.
+    label_full = sps.labels.copy() - 1
+    for i in range(1, sps.shape[0]):
+        label_full[ sps.ipt[i] : sps.ipt[i+1] ] += pkid[i]
+    return cc[1][label_full]
+
 def label(row, col, frame):
     """Label a 3D sparse array given the indices of the nonzero components.
 
@@ -66,7 +107,7 @@ def label(row, col, frame):
     graph_node_labels = np.linspace(1, len(row), len(row), dtype=np.int64)
     np.random.shuffle(graph_node_labels)
     graph = _get_graph(graph_node_labels, row, col, frame)
-    num_features, labels = cc(csgraph=graph)
+    num_features, labels = connected_components(csgraph=graph)
     return np.array( labels[graph_node_labels] ), num_features-1
 
 

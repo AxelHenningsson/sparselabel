@@ -11,7 +11,7 @@ import os
 if __name__ == "__main__":
 
 
-    if 0:
+    if 1:
         npeaks   = 320
         peaksize = 15
         shape = (16, 2048, 2048)
